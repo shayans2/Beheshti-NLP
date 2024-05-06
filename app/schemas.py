@@ -5,3 +5,9 @@ class NERSchema(BaseModel):
 
 class ParaphraserSchema(BaseModel):
     query: str
+
+
+class ImageSearchQuerySchema(BaseModel):
+    query: str
+    k:int
+    
