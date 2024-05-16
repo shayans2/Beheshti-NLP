@@ -1,4 +1,3 @@
-# app/services/ner_service.py
 from transformers import AutoModelForTokenClassification, AutoTokenizer, pipeline
 from hazm import Normalizer
 from app.services.transformers_service import TransformersService
@@ -11,9 +10,7 @@ class NERService:
         self.ner_pipeline = None
 
     def load_model(self):
-        print("NERService: Calling bert_service.load_model()")
         self.bert_service.load_model()
-        print(f"NERService: Model loaded? {self.bert_service.loaded}")
 
     def get_full_entity_names(self, text: str):
         if not self.bert_service.loaded:

@@ -8,11 +8,9 @@ class TransformersService:
         self.loaded = False
 
     def load_model(self):
-        print("Loading model...")
         self._tokenizer = self.tokenizer_class.from_pretrained(self.model_name_or_path)
         self._model = self.model_class.from_pretrained(self.model_name_or_path)
         self.loaded = True
-        print("Model loaded, setting loaded to True")
 
     def get_model(self):
         if not self.loaded:
