@@ -38,24 +38,29 @@ def activate_conda_env(env_name):
     str: The command to activate the specified conda environment.
     """
     if os.name == 'nt':  # Windows
-        activate_cmd = f'conda activate {env_name} && '
+        activate_cmd = f'conda activate {env_name}'
     else:  # Unix-based systems
-        activate_cmd = f'source activate {env_name} && '
+        activate_cmd = f'conda activate {env_name}'
+    try:
+        subprocess.check_call(activate_cmd, shell=True)
+        print("Conda environment is active!")
+    
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred while installing packages: {e}")
+        sys.exit(1)
     return activate_cmd
 
-def install_requirements(activate_cmd):
+def install_requirements():
     """
     Install the packages listed in requirements.txt using pip in the activated conda environment.
 
-    Parameters:
-    activate_cmd (str): The command to activate the conda environment.
 
     Raises:
     subprocess.CalledProcessError: If the package installation fails.
     """
     try:
         # Install packages from requirements.txt
-        subprocess.check_call(activate_cmd + f'pip install -r requirements.txt', shell=True)
+        subprocess.check_call('pip install -r requirements.txt', shell=True)
         print("Packages from requirements.txt installed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error occurred while installing packages: {e}")
