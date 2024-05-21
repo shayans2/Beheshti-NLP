@@ -2,7 +2,7 @@ import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModel
 from hazm import Normalizer
 from transformers import AutoTokenizer
-from app.config.settings import INTENT_CONFIG, INTENT_MODEL, INTENT_TOKENIZER
+from app.config.settings import BERT_BASE_MODEL, BERT_BASE_TOKENIZER
 
 class IntentService:
     """
@@ -39,9 +39,8 @@ class IntentService:
         """
         Loads the pre-trained Transformer model, tokenizer, and normalizer.
         """
-        self._config = AutoConfig.from_pretrained(INTENT_CONFIG)
-        self._model = AutoModel.from_pretrained(INTENT_MODEL)
-        self._tokenizer = AutoTokenizer.from_pretrained(INTENT_TOKENIZER)
+        self._model = AutoModel.from_pretrained(BERT_BASE_MODEL)
+        self._tokenizer = AutoTokenizer.from_pretrained(BERT_BASE_TOKENIZER)
         self._normalizer = Normalizer()
     
     def get_model(self):
