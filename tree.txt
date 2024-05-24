@@ -3,12 +3,12 @@
 ├── app
 │   ├── api
 │   │   ├── endpoints
+│   │   │   ├── intent.py
 │   │   │   ├── ner.py
 │   │   │   └── paraphraser.py
 │   │   └── router.py
 │   ├── config
 │   │   └── settings.py
-│   ├── dependencies.py
 │   ├── main.py
 │   ├── model_files
 │   │   ├── paraphraser.ckpt
@@ -19,6 +19,7 @@
 │   ├── schemas.py
 │   ├── services
 │   │   ├── index.py
+│   │   ├── intent_service.py
 │   │   ├── ner_service.py
 │   │   ├── paraphraser_service.py
 │   │   └── transformers_service.py
@@ -27,4 +28,4 @@
 ├── requirements.txt
 └── tree.txt
 
-9 directories, 19 files
+16 directories, 52 files
