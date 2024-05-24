@@ -1,10 +1,10 @@
 import torch
-from transformers import AutoConfig, AutoTokenizer, AutoModel
+import re
 from hazm import Normalizer
-from transformers import AutoTokenizer
-from app.config.settings import BERT_BASE_MODEL, BERT_BASE_TOKENIZER
+from transformers import AutoTokenizer, AutoModel
+from app.config.settings import Sentiment_model, Sentiment_config, Sentiment_tokenizer
 
-class IntentService:
+class SentimentService:
     """
     Service for Intent Classification using pre-trained Transformer models.
 
@@ -17,7 +17,7 @@ class IntentService:
     _config : transformers.PretrainedConfig
         Configuration of the pre-trained Transformer model.
     _model : transformers.PreTrainedModel
-        The pre-trained Transformer model for intent classification.
+        The pre-trained Transformer model for sentiment classification.
     _tokenizer : transformers.PreTrainedTokenizer
         Tokenizer associated with the pre-trained Transformer model.
     _normalizer : hazm.Normalizer
@@ -27,22 +27,22 @@ class IntentService:
     """
     def __init__(self):
         """
-        Initializes the IntentService instance.
+        Initializes the SentimentService instance.
         """
-        self._config = None
         self._model = None
         self._tokenizer = None
         self._normalizer = None
         self.loaded = False
-    
+
     def load_model(self):
         """
-        Loads the pre-trained Transformer model, tokenizer, and normalizer.
+        Loads the pre-trained Transformer model and tokenizer.
         """
-        self._model = AutoModel.from_pretrained(BERT_BASE_MODEL)
-        self._tokenizer = AutoTokenizer.from_pretrained(BERT_BASE_TOKENIZER)
+        self._model = AutoModel.from_pretrained(Sentiment_model)
+        self._tokenizer = AutoTokenizer.from_pretrained(Sentiment_tokenizer)
         self._normalizer = Normalizer()
-    
+        self.loaded = True
+
     def get_model(self):
         """
         Returns the loaded pre-trained Transformer model.
@@ -53,7 +53,7 @@ class IntentService:
             If the model is not loaded.
         """
         if not self.loaded:
-            raise ValueError("Intent Classification Model is not loaded. Call load_model() first.")
+            raise ValueError("Sentiment Classification Model not loaded. Call load_model() first.")
         return self._model
 
     def get_tokenizer(self):
@@ -66,10 +66,10 @@ class IntentService:
             If the tokenizer is not loaded.
         """
         if not self.loaded:
-            raise ValueError("Intent Classification Tokenizer is not loaded. Call load_model() first.")
+            raise ValueError("Sentiment Classification Tokenizer not loaded. Call load_model() first.")
         return self._tokenizer
 
-    def _get_representation(self, sentence: str) -> torch.tensor:
+    def get_representation(self, input_text: str) -> torch.tensor:
         """
         Obtains the representation of a sentence using the pre-trained Transformer model.
 
@@ -84,16 +84,19 @@ class IntentService:
             The last hidden state of the model's output for the input sentence.
         """
 
+        model = self.get_model()
+        tokenizer = self.get_tokenizer()
+        
         # Tokenize the example string
-        tokens = self._tokenizer(sentence, return_tensors='pt')
-
+        tokens = tokenizer(input_text, return_tensors='pt')
+        
         # Forward pass to obtain the model's representation
         with torch.no_grad():
-            outputs = self._model(**tokens)
+            outputs = model(**tokens)
         last_hidden_states = outputs.last_hidden_state
         return last_hidden_states
 
-    def _most_repeated_element(self, tensor: torch.tensor):
+    def most_repeated_element(self, tensor: torch.tensor):
         """
         Finds the most repeated element in a tensor.
 
@@ -115,7 +118,7 @@ class IntentService:
 
         # Check if the input is a torch.Tensor
         if not isinstance(tensor, torch.Tensor):
-            raise ValueError("Input to _most_repeated_element function should be a tensor.")
+            raise ValueError("Input must be a torch.Tensor")
         
         # Flatten the tensor to a 1D array
         flattened_tensor = tensor.view(-1)
@@ -131,43 +134,39 @@ class IntentService:
 
         return most_repeated
 
-    def intent_classifier(self, data: dict, sentence: str) -> dict:
+    def sentiment_classifier(self, data:dict, target_sentence:str) -> dict:
         """
-        Classifies the intent of the given sentence based on the provided training data.
+        Classifies the sentiment of the given sentence based on the provided training data.
 
         Parameters:
         ----------
         data : dict
-            A dictionary where keys are intent labels and values are lists of example sentences.
-            Example: {"رزرو غذا": ["یک پیتزا با پپرونی و قارچ بساز .", ...], ...}
+            A dictionary where keys are sentiment labels and values are lists of example sentences.
+            Example: {"مثبت": ["غذا گرم و خوشمزه بود.", ...], ...}
         sentence : str
             The input sentence to classify.
-            Example: "برای من یک کشک بادمجون سفارش بده"
+            Example: "غذا زود و سریع به دستم رسید"
 
         Returns:
         -------
         dict
             A dictionary with indices, values of the nearest neighbors, and the majority class.
         """
-        data_points = []
-        distinct_data_points = {}
-        sentiment_points = []
-        for key in data.keys():
-            sentiment_points.append(self._get_representation(key))
-            tmp = []
-            sentences = data[key]
-            for sent in sentences:
-                tmp.append(torch.mean(self._get_representation(self._normalizer.normalize(sent)), dim=1))
-            data_points += tmp
-            distinct_data_points[key] = tmp
-        
-        target_rep = torch.mean(self._get_representation(self._normalizer.normalize(sentence)), dim=1)
-        points = torch.concat(data_points, dim=0)
-        dist = torch.norm(points - target_rep, dim=1, p=None)
-        knn = dist.topk(3, largest=False)
-        print({'Indices': torch.floor(knn.indices / len(sentiment_points)).tolist(), 'Values': knn.values.tolist(), 'Majority Class': self._most_repeated_element(torch.floor(knn.indices / len(sentiment_points)))})
-        return {'Indices': torch.floor(knn.indices / len(sentiment_points)).tolist(), 'Values': knn.values.tolist(), 'Majority Class': self._most_repeated_element(torch.floor(knn.indices / len(sentiment_points)))}
-        
 
+        j = 0
+        for class_name in data.keys():
+            class_point = self.get_representation(class_name)
+            class_points = []
+            for sentence in data[class_name]:
+                class_points.append(torch.mean(self.get_representation(self._normalizer.normalize(sentence)), dim=1))
+            if j == 0:
+                points = class_points
+            
+            points += class_points
 
-
+            j += 1
+        sentence_rep = torch.mean(self.get_representation(self._normalizer.normalize(target_sentence)), dim=1)
+        data = torch.concat(points, dim=0)
+        dist = torch.norm(data - sentence_rep, dim=1, p=None)
+        knn = dist.topk(4, largest=False)
+        return {'Indices': torch.floor(knn.indices / 5).tolist(), 'Values': knn.values.tolist(), 'Majority Class': self.most_repeated_element(torch.floor(knn.indices / 5))}
