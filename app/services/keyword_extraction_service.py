@@ -2,26 +2,34 @@ import joblib
 import hazm
 import numpy as np
 import nltk
-from transformers import AutoModelForTokenClassification, AutoTokenizer
 
-from app.services.transformers_service import TransformersService
-from app.services.ner_service import NERService
-from app.config.settings import POS_TAGGER_MODEL, NER_MODEL_NAME, TF_IDF_MODEL
-
+from app.config.settings import POS_TAGGER_MODEL, TF_IDF_MODEL
 
 class KeywordExtractionService:
     def __init__(self):
+        self.model = None
+        self.feature_names = None
+
+    def load_model(self):
+        from app.services.index import get_ner_service  # Lazy import to avoid circular dependency
+
         self.model = joblib.load(TF_IDF_MODEL)
         self.feature_names = self.model.get_feature_names_out()
-        self.ner_service = NERService()
-        self.ner_service.load_model()
+        self.ner_service = get_ner_service()
 
     def extract_keywords(self, text, n=10):
+        if self.model is None or self.feature_names is None:
+            raise ValueError("Model not loaded. Call load_model() first.")
+
         tf_idf_vector = self.model.transform([text])
         all_candidates = self.extract_all_candidates(text)
         keywords = self.__extract_topn_from_vector(
             all_candidates, tf_idf_vector.tocoo(), self.feature_names, n
         )
+
+        if not self.ner_service.loaded:
+            raise ValueError("NER model not loaded.")
+            
         entities = self.ner_service.get_full_entity_names(text)
 
         for s in ["organization", "person", "location"]:
@@ -35,8 +43,7 @@ class KeywordExtractionService:
         return keywords
 
     def extract_all_candidates(self, text):
-        model_path = POS_TAGGER_MODEL
-        tagger = hazm.POSTagger(model=model_path)
+        tagger = hazm.POSTagger(model=POS_TAGGER_MODEL)
         grammers = ["""NP:{<NOUN,EZ>?<NOUN.*>}""", """NP:{<NOUN.*><ADJ.*>?}"""]
         token_tag_list = tagger.tag_sents([hazm.WordTokenizer().tokenize(text)])
         all_candidates = set()

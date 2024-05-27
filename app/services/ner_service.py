@@ -5,12 +5,14 @@ from app.config.settings import NER_MODEL_NAME
 
 class NERService:
     def __init__(self):
-        self.bert_service = TransformersService(model=AutoModelForTokenClassification, tokenizer=AutoTokenizer, model_name_or_path=NER_MODEL_NAME)
         self.normalizer = Normalizer()
         self.ner_pipeline = None
+        self.loaded = False
 
     def load_model(self):
+        self.bert_service = TransformersService(model=AutoModelForTokenClassification, tokenizer=AutoTokenizer, model_name_or_path=NER_MODEL_NAME)
         self.bert_service.load_model()
+        self.loaded = True
 
     def get_full_entity_names(self, text: str):
         if not self.bert_service.loaded:
