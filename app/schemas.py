@@ -22,3 +22,19 @@ class IntentSchema(BaseModel):
     """
     query: str
     data: Dict
+
+class SentimentSchema(BaseModel):
+    """
+    Schema for sentiment classification input using Pydantic.
+
+    This schema defines the structure of the input data required for sentiment classification.
+    
+    Attributes:
+    ----------
+    query : str
+        The input sentence to classify.
+    data : Dict
+        A dictionary where keys are sentiment labels and values are lists of example sentences.
+    """
+    query: str
+    data: Dict
