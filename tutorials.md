@@ -53,7 +53,6 @@ To deploy a new model in the Giumeh project, follow these steps:
     ```python
     import torch
     from transformers import AutoConfig, AutoTokenizer, AutoModel
-    from hazm import Normalizer
     from transformers import AutoTokenizer
     from app.config.settings import YOUR_SERVICE_MODEL_PATH, YOUR_SERVICE_TOKENIZER_PATH
 
@@ -69,8 +68,6 @@ To deploy a new model in the Giumeh project, follow these steps:
             The pre-trained Transformer model.
         _tokenizer : transformers.PreTrainedTokenizer
             Tokenizer associated with the pre-trained Transformer model.
-        _normalizer : hazm.Normalizer
-            Normalizer for preprocessing Persian text.
         loaded : bool
             Flag indicating whether the model and tokenizer are loaded.
         """

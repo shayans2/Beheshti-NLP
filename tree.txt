@@ -27,5 +27,3 @@
 │       └── service_manager.py
 ├── requirements.txt
 └── tree.txt
-
-16 directories, 52 files
