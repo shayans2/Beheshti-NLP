@@ -9,7 +9,6 @@
 
 import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModel
-from hazm import Normalizer
 from app.config.settings import MODEL_NAME, TOKENIZER_NAME
 
 class ServiceTemplate:
@@ -28,8 +27,6 @@ class ServiceTemplate:
         The pre-trained Transformer model for [Your Task Description].
     _tokenizer : transformers.PreTrainedTokenizer
         Tokenizer associated with the pre-trained Transformer model.
-    _normalizer : hazm.Normalizer
-        Normalizer for preprocessing Persian text.
     loaded : bool
         Flag indicating whether the model and tokenizer are loaded.
     """
@@ -49,7 +46,6 @@ class ServiceTemplate:
         """
         self._model = AutoModel.from_pretrained(MODEL_NAME)
         self._tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_NAME)
-        self._normalizer = Normalizer()
         self.loaded = True
     
     def get_model(self):
