@@ -12,7 +12,6 @@ def create_conda_env(env_name, python_version):
 
     Raises:
     subprocess.CalledProcessError: If the environment creation fails.
-    
     """
     try:
         # Check if the environment already exists
@@ -29,47 +28,52 @@ def create_conda_env(env_name, python_version):
 
 def activate_conda_env(env_name):
     """
-    Generate the command to activate a conda environment.
+    Activate a conda environment.
 
     Parameters:
     env_name (str): The name of the conda environment to activate.
 
     Returns:
-    str: The command to activate the specified conda environment.
+    dict: The environment variables after activation.
+
+    Raises:
+    subprocess.CalledProcessError: If the activation command fails.
     """
-    if os.name == 'nt':  # Windows
-        activate_cmd = f'conda activate {env_name}'
-    else:  # Unix-based systems
-        activate_cmd = f'conda activate {env_name}'
     try:
-        subprocess.check_call(activate_cmd, shell=True)
+        # On Windows, activate using `conda activate` and get the environment variables
+        if os.name == 'nt':
+            activate_cmd = f'conda activate {env_name}'
+            env_vars = subprocess.check_output(['cmd.exe', '/C', activate_cmd], shell=True)
+        else:
+            # On Unix-based systems, activate using `source activate` and get the environment variables
+            activate_cmd = f'conda activate {env_name}'
+            env_vars = subprocess.check_output(['bash', '-c', activate_cmd], shell=True)
+        
         print("Conda environment is active!")
-    
+        return env_vars
     except subprocess.CalledProcessError as e:
-        print(f"Error occurred while installing packages: {e}")
+        print(f"Error occurred while activating environment: {e}")
         sys.exit(1)
-    return activate_cmd
 
 def install_requirements():
     """
     Install the packages listed in requirements.txt using pip in the activated conda environment.
-
 
     Raises:
     subprocess.CalledProcessError: If the package installation fails.
     """
     try:
         # Install packages from requirements.txt
-        subprocess.check_call('pip install -r requirements.txt', shell=True)
+        subprocess.check_call(['pip', 'install', '-r', 'requirements.txt'])
         print("Packages from requirements.txt installed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error occurred while installing packages: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
-    env_name = "giumeh" 
+    env_name = "giumeh"
     python_version = "3.11.9"
 
     create_conda_env(env_name, python_version)
     activate_cmd = activate_conda_env(env_name)
-    install_requirements(activate_cmd)
+    install_requirements()
