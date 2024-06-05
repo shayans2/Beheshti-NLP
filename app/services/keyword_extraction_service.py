@@ -2,25 +2,43 @@ import joblib
 import hazm
 import numpy as np
 import nltk
-from transformers import AutoModelForTokenClassification, AutoTokenizer
 
-from app.services.transformers_service import TransformersService
-from app.services.ner_service import NERService
-from app.config.settings import POS_TAGGER_MODEL, NER_MODEL_NAME, TF_IDF_MODEL
+from app.config.settings import POS_TAGGER_MODEL, TF_IDF_MODEL
+from app.services import index
 
 
 class KeywordExtractionService:
     def __init__(self):
-        self.model = joblib.load(TF_IDF_MODEL)
-        self.feature_names = self.model.get_feature_names_out()
-        self.ner_service = NERService()
-        self.ner_service.load_model()
+        self._model = None
+        self._feature_names = None
+        self.ner_service = None
+        self.loaded = False
+        
+    def load_model(self):
+        self._model = joblib.load(TF_IDF_MODEL)
+        self._feature_names = self._model.get_feature_names_out()
+        self.ner_service = index.get_ner_service()
+        self.loaded = True
+        
+    def get_model(self):
+        if not self.loaded:
+            raise ValueError("Model is not loaded. Call load_model() first.")
+        return self._model
+    
+    def get_featuer_names(self):
+        if not self.loaded:
+            raise ValueError("Model is not loaded. Call load_model() first.")
+        return self._feature_names
+    
 
     def extract_keywords(self, text, n=10):
-        tf_idf_vector = self.model.transform([text])
+        if not self.loaded:
+            raise ValueError("Model is not loaded. Call load_model() first.")
+        
+        tf_idf_vector = self._model.transform([text])
         all_candidates = self.extract_all_candidates(text)
         keywords = self.__extract_topn_from_vector(
-            all_candidates, tf_idf_vector.tocoo(), self.feature_names, n
+            all_candidates, tf_idf_vector.tocoo(), self._feature_names, n
         )
         entities = self.ner_service.get_full_entity_names(text)
 
